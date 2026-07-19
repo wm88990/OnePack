@@ -74,6 +74,12 @@ pub struct PackageInstall {
     /// 绿色软件解压后的子目录名（green 类型使用，为空则解压到根目录）
     #[serde(default)]
     pub extract_subdir: Option<String>,
+    /// 自定义安装目录（exe/msi 类型使用）
+    #[serde(default)]
+    pub install_dir: Option<String>,
+    /// 目录参数格式（如 /D=、-d 等）
+    #[serde(default)]
+    pub dir_format: Option<String>,
 }
 
 // ===== 默认配置 =====

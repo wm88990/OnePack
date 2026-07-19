@@ -26,6 +26,8 @@ export interface PackageInstall {
   manual_args?: string
   main_exe?: string         // 绿色软件主程序文件名
   extract_subdir?: string   // 绿色软件解压后的子目录名
+  install_dir?: string      // 自定义安装目录
+  dir_format?: string       // 目录参数格式（如 /D=、-d）
 }
 
 // ===== 分类类型 =====

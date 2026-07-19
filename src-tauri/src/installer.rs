@@ -113,7 +113,14 @@ fn install_exe(packages_dir: &Path, pkg: &Package) -> Result<(), String> {
         }
     }
 
-    let full_cmd = format!("\"{}\" {}", installer_path.display(), pkg.install.silent_args);
+    // 构建安装命令（含自定义目录参数）
+    let mut full_cmd = format!("\"{}\" {}", installer_path.display(), pkg.install.silent_args);
+    if let Some(ref install_dir) = pkg.install.install_dir {
+        if !install_dir.is_empty() {
+            let dir_format = pkg.install.dir_format.as_deref().unwrap_or("/D=");
+            full_cmd = format!("{} {}\"{}\"", full_cmd, dir_format, install_dir);
+        }
+    }
 
     #[cfg(target_os = "windows")]
     let result = Command::new("cmd")
