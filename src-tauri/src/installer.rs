@@ -3,6 +3,8 @@ use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 
 
 // ===== 安装状态 =====
