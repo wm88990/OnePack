@@ -1,0 +1,160 @@
+meta:
+  name: "我的装机方案"
+  version: "1.0.0"
+  created: "2026-07-18"
+
+categories:
+  - id: system
+    name: 系统工具
+    icon: "\u2699\uFE0F"
+  - id: browser
+    name: 网络浏览
+    icon: "\uD83C\uDF10"
+  - id: office
+    name: 办公应用
+    icon: "\uD83D\uDCC4"
+  - id: social
+    name: 通讯社交
+    icon: "\uD83D\uDCAC"
+  - id: media
+    name: 影音娱乐
+    icon: "\uD83C\uDFB5"
+  - id: dev
+    name: 开发工具
+    icon: "\uD83D\uDD27"
+
+packages:
+  - id: "7zip"
+    name: "7-Zip"
+    icon: "\uD83D\uDDCE\uFE0F"
+    category: system
+    description: "开源压缩解压工具，支持多种格式"
+    version: "24.09"
+    size: "1.5 MB"
+    source:
+      type: local
+      path: "7z2409-x64.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S"
+
+  - id: "winrar"
+    name: "WinRAR"
+    icon: "\uD83D\uDCDA"
+    category: system
+    description: "强大的压缩文件管理器"
+    version: "6.24"
+    size: "3.4 MB"
+    source:
+      type: local
+      path: "WinRAR-x64.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S"
+
+  - id: "huorong"
+    name: "火绒安全"
+    icon: "\uD83D\uDEE1\uFE0F"
+    category: system
+    description: "轻量级安全防护软件"
+    version: "5.0.82"
+    size: "32 MB"
+    source:
+      type: local
+      path: "Huorong.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S"
+
+  - id: "chrome"
+    name: "Google Chrome"
+    icon: "\uD83C\uDF10"
+    category: browser
+    description: "谷歌浏览器"
+    version: "131.0"
+    size: "95 MB"
+    source:
+      type: local
+      path: "ChromeSetup.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/silent /install"
+
+  - id: "wechat"
+    name: "微信"
+    icon: "\uD83D\uDCAC"
+    category: social
+    description: "腾讯即时通讯工具"
+    version: "3.9.12"
+    size: "280 MB"
+    source:
+      type: local
+      path: "WeChatSetup.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S /AutoInstall"
+
+  - id: "qq"
+    name: "QQ"
+    icon: "\uD83D\uDC1F"
+    category: social
+    description: "腾讯即时通讯工具"
+    version: "9.9.15"
+    size: "320 MB"
+    source:
+      type: local
+      path: "QQNTSetup.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S"
+
+  - id: "dingtalk"
+    name: "钉钉"
+    icon: "\uD83D\uDCCC"
+    category: social
+    description: "阿里巴巴企业通讯协作平台"
+    version: "7.6"
+    size: "195 MB"
+    source:
+      type: local
+      path: "DingTalk.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/S"
+
+  - id: "vscode"
+    name: "VS Code"
+    icon: "\uD83D\uDCBB"
+    category: dev
+    description: "微软轻量代码编辑器"
+    version: "1.96"
+    size: "98 MB"
+    source:
+      type: local
+      path: "VSCodeSetup-x64.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/VERYSILENT /MERGETASKS=!RUN /NORESTART"
+
+  - id: "git"
+    name: "Git"
+    icon: "\uD83D\uDCE6"
+    category: dev
+    description: "分布式版本控制系统"
+    version: "2.47"
+    size: "58 MB"
+    source:
+      type: local
+      path: "Git-Setup.exe"
+      hash_sha256: ""
+    install:
+      type: exe
+      silent_args: "/VERYSILENT /NORESTART"

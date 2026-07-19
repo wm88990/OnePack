@@ -1,0 +1,63 @@
+// ===== 软件包类型定义 =====
+
+export interface PackageItem {
+  id: string
+  name: string
+  icon: string
+  category: string
+  description: string
+  version: string
+  size: string
+  source: PackageSource
+  install: PackageInstall
+}
+
+export interface PackageSource {
+  type: 'local' | 'remote'
+  path?: string        // local 模式下相对于 packages/ 的路径
+  url?: string         // remote 模式下的下载地址
+  hash_sha256?: string
+}
+
+export interface PackageInstall {
+  type: 'exe' | 'msi'
+  silent_args: string
+  manual_args?: string
+}
+
+// ===== 分类类型 =====
+
+export interface CategoryItem {
+  id: string
+  name: string
+  icon: string
+}
+
+// ===== 配置文件类型 =====
+
+export interface ConfigFile {
+  meta: {
+    name: string
+    version: string
+    created?: string
+  }
+  categories: CategoryItem[]
+  packages: PackageItem[]
+}
+
+// ===== 安装状态 =====
+
+export type InstallStatus = 'none' | 'installed' | 'outdated' | 'installing' | 'failed'
+
+// ===== 安装进度事件 =====
+
+export interface InstallProgressEvent {
+  type: 'start' | 'progress' | 'success' | 'error' | 'complete'
+  package_id: string
+  package_name: string
+  progress?: number      // 0-100
+  current?: number       // 当前第几个
+  total?: number         // 总共几个
+  message?: string
+  failed?: number        // complete 时失败的个数
+}
