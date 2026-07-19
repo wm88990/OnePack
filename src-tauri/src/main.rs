@@ -169,7 +169,7 @@ fn scan_packages(_app_handle: tauri::AppHandle) -> Result<Vec<serde_json::Value>
         let (install_type, silent_args, main_exe, extract_subdir) = match extension.as_str() {
             "zip" => (
                 "green",
-                "",
+                String::new(),
                 Some(stem.to_string()),
                 Some(stem.to_string()),
             ),
@@ -294,7 +294,7 @@ fn guess_category(filename_lower: &str, extension: &str) -> String {
     let dev_keywords = ["vscode", "code", "git", "node", "python", "java", "rust", "go", "docker", "idea", "clion", "webstorm", "notepad++", "sublime"];
     let system_keywords = ["7-zip", "7z", "winrar", "bandizip", "huorong", "360", "kaspersky", "driver", "directx"];
 
-    let keywords_list = [
+    let keywords_list: [(&str, &[&str]); 6] = [
         ("browser", &browser_keywords),
         ("office", &office_keywords),
         ("social", &social_keywords),
