@@ -54,7 +54,7 @@ export interface ConfigFile {
 
 // ===== 安装状态 =====
 
-export type InstallStatus = 'none' | 'installed' | 'outdated' | 'installing' | 'failed'
+export type InstallStatus = 'none' | 'installed' | 'unknown'
 
 // ===== 安装进度事件 =====
 

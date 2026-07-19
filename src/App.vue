@@ -20,6 +20,8 @@ const currentCategory = ref('all')
 const searchKeyword = ref('')
 const { toasts, addToast, removeToast } = useToast()
 const showAddDialog = ref(false)
+const installedIds = ref<Set<string>>(new Set())
+const checkingStatus = ref(false)
 
 let unlisten: UnlistenFn | null = null
 
@@ -146,10 +148,31 @@ function toggleCheckAll(checked: boolean) {
   }
 }
 
+// 检测已安装状态
+async function checkInstalledStatus() {
+  if (!config.value) return
+  checkingStatus.value = true
+  try {
+    const allIds = config.value.packages.map(p => p.id)
+    const result = await invoke<Record<string, boolean>>('check_installed', { packages: allIds })
+    installedIds.value = new Set(
+      Object.entries(result)
+        .filter(([, installed]) => installed)
+        .map(([id]) => id)
+    )
+  } catch (e) {
+    // 静默失败，不影响主流程
+    console.warn('检测安装状态失败:', e)
+  } finally {
+    checkingStatus.value = false
+  }
+}
+
 // 添加软件包后的回调
 async function onPackagesAdded() {
   addToast('软件包已添加，正在刷新配置...', 'success')
   await loadPackages()
+  checkInstalledStatus()
 }
 
 // 切换软件启用/禁用
@@ -163,6 +186,8 @@ function toggleEnabled(id: string, enabled: boolean) {
 
 onMounted(async () => {
   await loadPackages()
+  // 加载完成后检测已安装状态
+  checkInstalledStatus()
 
   // 监听安装进度事件
   unlisten = await listen<InstallProgressEvent>('install-progress', (event) => {
@@ -259,6 +284,8 @@ onUnmounted(() => {
           :packages="filteredPackages"
           :categories="config.categories"
           :selected-ids="selectedIds"
+          :installed-ids="installedIds"
+          :checking-status="checkingStatus"
           @toggle-package="togglePackage"
           @toggle-check-all="toggleCheckAll"
           @toggle-enabled="toggleEnabled"

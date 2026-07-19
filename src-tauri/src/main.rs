@@ -207,19 +207,57 @@ fn scan_packages(_app_handle: tauri::AppHandle) -> Result<Vec<serde_json::Value>
             format!("{} KB", file_size / 1024)
         };
 
+        // 智能检测：尝试从文件名提取版本号
+        let version = extract_version_from_filename(stem);
+
+        // 智能检测：尝试从 exe 文件读取版本信息 (仅 Windows)
+        let (detected_version, detected_vendor) = if extension == "exe" && cfg!(target_os = "windows") {
+            read_exe_version_info(&path)
+        } else {
+            (String::new(), String::new())
+        };
+
+        let final_version = if !detected_version.is_empty() {
+            detected_version
+        } else if !version.is_empty() {
+            version
+        } else {
+            "未知".to_string()
+        };
+
+        // 智能分类：根据文件名猜测分类
+        let category = guess_category(&file_name.to_lowercase(), &extension);
+
+        // 生成更友好的名称
+        let friendly_name = make_friendly_name(stem);
+
+        // 生成描述
+        let description = if !detected_vendor.is_empty() {
+            format!("{} - {}", detected_vendor, final_version)
+        } else {
+            format!("从文件自动检测: {}", file_name)
+        };
+
+        // 为 exe/msi 计算 SHA256
+        let hash = if matches!(extension.as_str(), "exe" | "msi") {
+            compute_file_hash(&path)
+        } else {
+            String::new()
+        };
+
         results.push(serde_json::json!({
             "id": pkg_id,
-            "name": stem.to_string(),
-            "icon": "📦",
-            "category": "system",
-            "description": format!("从文件自动检测: {}", file_name),
-            "version": "自动检测",
+            "name": friendly_name,
+            "icon": guess_icon(&category),
+            "category": category,
+            "description": description,
+            "version": final_version,
             "size": size_str,
             "enabled": true,
             "source": {
                 "type": "local",
                 "path": file_name,
-                "hash_sha256": ""
+                "hash_sha256": hash
             },
             "install": {
                 "type": install_type,
@@ -232,6 +270,243 @@ fn scan_packages(_app_handle: tauri::AppHandle) -> Result<Vec<serde_json::Value>
     }
 
     Ok(results)
+}
+
+/// 从文件名提取版本号
+fn extract_version_from_filename(stem: &str) -> String {
+    // 匹配常见版本号模式: v1.0, 1.0.0, 2024.1, x64 等
+    let re = regex::Regex::new(r"(\d{1,4}[.-]\d{1,2}(?:[.-]\d{1,2})?(?:[.-]\d{1,2})?)").unwrap();
+    if let Some(caps) = re.find(stem) {
+        return caps.as_str().trim_start_matches('v').trim_start_matches('V').to_string();
+    }
+    String::new()
+}
+
+/// 根据文件名猜测软件分类
+fn guess_category(filename_lower: &str, extension: &str) -> String {
+    if extension == "zip" {
+        // zip 文件默认归为绿色软件
+        return "green".to_string();
+    }
+    let browser_keywords = ["chrome", "firefox", "edge", "opera", "brave", "vivaldi"];
+    let office_keywords = ["office", "word", "excel", "ppt", "wps", "libreoffice"];
+    let social_keywords = ["wechat", "qq", "telegram", "discord", "tim", "dingtalk", "wechat"];
+    let media_keywords = ["vlc", "potplayer", "foobar", "aimp", "spotify", "music", "video", "mpc", "kodi"];
+    let dev_keywords = ["vscode", "code", "git", "node", "python", "java", "rust", "go", "docker", "idea", "clion", "webstorm", "notepad++", "sublime"];
+    let system_keywords = ["7-zip", "7z", "winrar", "bandizip", "huorong", "360", "kaspersky", "driver", "directx"];
+
+    let keywords_list = [
+        ("browser", &browser_keywords),
+        ("office", &office_keywords),
+        ("social", &social_keywords),
+        ("media", &media_keywords),
+        ("dev", &dev_keywords),
+        ("system", &system_keywords),
+    ];
+
+    for (cat, keywords) in keywords_list {
+        if keywords.iter().any(|k| filename_lower.contains(k)) {
+            return cat.to_string();
+        }
+    }
+
+    "system".to_string()
+}
+
+/// 根据分类猜测图标
+fn guess_icon(category: &str) -> String {
+    match category {
+        "browser" => "🌐".to_string(),
+        "office" => "📄".to_string(),
+        "social" => "💬".to_string(),
+        "media" => "🎵".to_string(),
+        "dev" => "🛠️".to_string(),
+        "green" => "🍃".to_string(),
+        _ => "📦".to_string(),
+    }
+}
+
+/// 从文件名生成更友好的软件名
+fn make_friendly_name(stem: &str) -> String {
+    let name = stem.to_string();
+    // 去掉常见后缀: Setup, Install, x64, x86, portable 等
+    let suffixes = [
+        "-x64", "_x64", "-x86", "_x86", "-64bit", "-32bit",
+        "Setup", "Install", "Portable", ".portable",
+    ];
+    let mut result = name.clone();
+    for suffix in &suffixes {
+        if result.to_lowercase().ends_with(&suffix.to_lowercase()) {
+            result = result[..result.len() - suffix.len()].to_string();
+        }
+    }
+    // 去掉末尾的 _- . 等分隔符
+    result.trim_end_matches('_').trim_end_matches('-').trim_end_matches('.').to_string()
+}
+
+/// 计算 SHA256
+fn compute_file_hash(path: &std::path::Path) -> String {
+    match std::fs::read(path) {
+        Ok(data) => {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(&data);
+            format!("{:x}", hasher.finalize())
+        }
+        Err(_) => String::new(),
+    }
+}
+
+/// 从 exe 文件读取版本信息 (仅 Windows)
+#[cfg(target_os = "windows")]
+fn read_exe_version_info(path: &std::path::Path) -> (String, String) {
+    use std::os::windows::process::CommandExt;
+    use std::process::Command;
+
+    let path_str = path.display().to_string();
+
+    // 使用 PowerShell 读取文件版本信息
+    let ps_cmd = format!(
+        "$v = [System.Diagnostics.FileVersionInfo]::GetVersionInfo('{}'); Write-Output \"$($v.FileVersion)|$($v.CompanyName)\"",
+        path_str.replace("'", "''")
+    );
+
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &ps_cmd])
+        .creation_flags(0x08000000)
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => {
+            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            let parts: Vec<&str> = stdout.splitn(2, '|').collect();
+            let version = parts.get(0).map(|s| s.trim().to_string()).unwrap_or_default();
+            let vendor = parts.get(1).map(|s| s.trim().to_string()).unwrap_or_default();
+            (version, vendor)
+        }
+        _ => (String::new(), String::new()),
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn read_exe_version_info(_path: &std::path::Path) -> (String, String) {
+    (String::new(), String::new())
+}
+}
+
+/// 检查指定软件是否已安装
+#[tauri::command]
+fn check_installed(_app_handle: tauri::AppHandle, packages: Vec<String>) -> Result<std::collections::HashMap<String, bool>, String> {
+    let mut result = std::collections::HashMap::new();
+
+    let app_dir = config::get_app_dir();
+    let config = config::load_config(&app_dir)?;
+
+    for pkg_id in &packages {
+        let installed = is_package_installed(&app_dir, &config, pkg_id);
+        result.insert(pkg_id.clone(), installed);
+    }
+
+    Ok(result)
+}
+
+/// 检查单个软件是否已安装
+#[cfg(target_os = "windows")]
+fn is_package_installed(app_dir: &std::path::Path, config: &Config, pkg_id: &str) -> bool {
+    let pkg = match config.packages.iter().find(|p| p.id == pkg_id) {
+        Some(p) => p,
+        None => return false,
+    };
+
+    let packages_dir = app_dir.join("packages");
+    let apps_dir = app_dir.join("apps");
+
+    match pkg.install.install_type.as_str() {
+        // 绿色软件：检查 apps/ 目录下是否存在对应子目录
+        "green" => {
+            let subdir = pkg.install.extract_subdir.as_deref().unwrap_or(&pkg.id);
+            let target = apps_dir.join(subdir);
+            if let Some(ref main_exe) = pkg.install.main_exe {
+                if !main_exe.is_empty() {
+                    return target.join(main_exe).exists();
+                }
+            }
+            target.exists()
+        }
+        // exe/msi 安装的软件：检查安装目录或注册表
+        "exe" | "msi" => {
+            // 方法1：检查配置中指定的安装目录
+            if let Some(ref install_dir) = pkg.install.install_dir {
+                if !install_dir.is_empty() {
+                    let dir = std::path::Path::new(install_dir);
+                    if dir.exists() {
+                        // 目录存在，尝试找匹配的 exe
+                        if dir.join(format!("{}.exe", pkg_id)).exists() {
+                            return true;
+                        }
+                        // 检查目录是否有内容（简单启发式）
+                        if let Ok(entries) = std::fs::read_dir(dir) {
+                            if entries.count() > 0 {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 方法2：检查安装包是否仍在 packages/ 目录（未安装）
+            if let Some(ref path) = pkg.source.path {
+                if packages_dir.join(path).exists() {
+                    return false; // 安装包还在，可能尚未安装
+                }
+            }
+
+            // 方法3：尝试通过卸载注册表查找
+            check_registry_for_app(&pkg.name, &pkg.id)
+        }
+        _ => false,
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn is_package_installed(_app_dir: &std::path::Path, _config: &Config, _pkg_id: &str) -> bool {
+    false // 非 Windows 暂不支持
+}
+
+/// 通过 Windows 注册表检查软件是否已安装
+#[cfg(target_os = "windows")]
+fn check_registry_for_app(name: &str, id: &str) -> bool {
+    use std::os::windows::process::CommandExt;
+
+    // 查询注册表卸载项
+    let reg_paths = [
+        r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+        r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    ];
+
+    for reg_path in &reg_paths {
+        let output = std::process::Command::new("reg")
+            .args(["query", reg_path, "/s", "/f", "DisplayName"])
+            .creation_flags(0x08000000)
+            .output();
+
+        if let Ok(output) = output {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                // 检查是否包含软件名（不区分大小写）
+                if stdout.to_lowercase().contains(&name.to_lowercase()) {
+                    return true;
+                }
+                // 也检查包 ID
+                if stdout.to_lowercase().contains(&id.to_lowercase()) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    false
 }
 
 /// 将扫描到的软件包追加到 config.yaml
@@ -300,6 +575,7 @@ fn main() {
             export_config,
             scan_packages,
             add_packages,
+            check_installed,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

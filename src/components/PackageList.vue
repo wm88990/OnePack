@@ -6,6 +6,8 @@ const props = defineProps<{
   packages: PackageItem[]
   categories: CategoryItem[]
   selectedIds: Set<string>
+  installedIds?: Set<string>
+  checkingStatus?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +39,11 @@ const allChecked = computed(() => {
 function toggleCheckAll(e: Event) {
   const checked = (e.target as HTMLInputElement).checked
   emit('toggle-check-all', checked)
+}
+
+// 是否已安装
+function isInstalled(id: string) {
+  return props.installedIds?.has(id) || false
 }
 
 // 获取分类图标
@@ -96,6 +103,7 @@ function getCategoryIcon(catId: string) {
         <div class="pkg-meta">
           <span class="pkg-ver">{{ pkg.version }}</span>
           <span class="pkg-size">{{ pkg.size }}</span>
+          <span v-if="isInstalled(pkg.id)" class="installed-badge" title="已安装">✓ 已安装</span>
         </div>
         <label class="enable-switch" @click.stop>
           <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
@@ -118,6 +126,7 @@ function getCategoryIcon(catId: string) {
         <div class="pkg-tag">
           <span class="pkg-ver-tag">{{ pkg.version }}</span>
           <span class="pkg-size-tag">{{ pkg.size }}</span>
+          <span v-if="isInstalled(pkg.id)" class="installed-badge-sm" title="已安装">✓</span>
         </div>
         <label class="enable-switch enable-switch-sm" @click.stop>
           <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
@@ -137,6 +146,7 @@ function getCategoryIcon(catId: string) {
         <div class="card-icon">{{ pkg.icon }}</div>
         <div class="card-name">{{ pkg.name }}</div>
         <div class="card-ver">{{ pkg.version }} · {{ pkg.size }}</div>
+        <div v-if="isInstalled(pkg.id)" class="card-installed" title="已安装">✓ 已安装</div>
         <div class="card-check">
           <input type="checkbox" :checked="isChecked(pkg.id)" @click.stop />
         </div>
@@ -244,6 +254,14 @@ function getCategoryIcon(catId: string) {
 .pkg-meta { display: flex; gap: 12px; flex-shrink: 0; font-size: 11px; color: #999; }
 .pkg-ver { color: #2b5ea7; background: #e8f0fe; padding: 1px 7px; border-radius: 3px; }
 .pkg-size { color: #888; }
+.installed-badge {
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+}
 
 /* ===== 紧凑列表视图 ===== */
 .view-compact {}
@@ -278,6 +296,13 @@ function getCategoryIcon(catId: string) {
 .pkg-row-compact:hover .pkg-tag { display: flex; }
 .pkg-ver-tag { color: #2b5ea7; background: #e8f0fe; padding: 1px 5px; border-radius: 2px; }
 .pkg-size-tag { color: #888; }
+.installed-badge-sm {
+  color: #389e0d;
+  background: #f6ffed;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+}
 
 /* ===== 网格卡片视图 ===== */
 .view-grid {
@@ -321,6 +346,15 @@ function getCategoryIcon(catId: string) {
 .card-ver { font-size: 10px; color: #999; }
 .card-check { margin-top: 6px; }
 .card-check input[type="checkbox"] { accent-color: #2b5ea7; }
+.card-installed {
+ font-size: 10px;
+ color: #389e0d;
+ background: #f6ffed;
+ border: 1px solid #b7eb8f;
+ border-radius: 3px;
+ padding: 1px 6px;
+ margin-top: 4px;
+}
 
 /* ===== 禁用状态 ===== */
 .pkg-row.disabled,
