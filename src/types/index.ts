@@ -28,6 +28,8 @@ export interface PackageInstall {
   extract_subdir?: string   // 绿色软件解压后的子目录名
   install_dir?: string      // 自定义安装目录
   dir_format?: string       // 目录参数格式（如 /D=、-d）
+  create_shortcut?: boolean // 是否创建桌面快捷方式
+  shortcut_name?: string    // 快捷方式名称
 }
 
 // ===== 分类类型 =====

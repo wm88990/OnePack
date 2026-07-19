@@ -80,15 +80,18 @@ fn install_green(packages_dir: &Path, apps_dir: &Path, pkg: &Package) -> Result<
     extract_zip(&zip_path, &target_dir)
         .map_err(|e| format!("{}: 解压失败: {}", pkg.name, e))?;
 
-    // 如果配置了 main_exe，在桌面创建快捷方式（仅 Windows）
+    // 如果配置了创建快捷方式，在桌面创建快捷方式（仅 Windows）
     #[cfg(target_os = "windows")]
-    if let Some(ref main_exe) = pkg.install.main_exe {
-        if !main_exe.is_empty() {
-            let _ = create_shortcut(&pkg.name, &target_dir, main_exe);
+    if pkg.install.create_shortcut {
+        if let Some(ref main_exe) = pkg.install.main_exe {
+            if !main_exe.is_empty() {
+                let shortcut_name = pkg.install.shortcut_name.as_deref().unwrap_or(&pkg.name);
+                let _ = create_shortcut(shortcut_name, &target_dir, main_exe);
+            }
         }
     }
 
-    Ok(())
+    Ok(()))
 }
 
 /// 静默安装 exe
@@ -136,6 +139,19 @@ fn install_exe(packages_dir: &Path, pkg: &Package) -> Result<(), String> {
         .map_err(|e| format!("{}: 执行安装命令失败: {}", pkg.name, e))?;
 
     if result.status.success() {
+        // 安装成功后，如果配置了创建快捷方式，尝试查找并创建
+        #[cfg(target_os = "windows")]
+        if pkg.install.create_shortcut {
+            let shortcut_name = pkg.install.shortcut_name.as_deref().unwrap_or(&pkg.name);
+            // exe 安装后尝试从安装目录查找快捷方式目标
+            if let Some(ref install_dir) = pkg.install.install_dir {
+                if !install_dir.is_empty() {
+                    let _ = create_exe_shortcut(shortcut_name, install_dir, &pkg.id);
+                }
+            } else {
+                // 未指定安装目录，跳过快捷方式创建
+            }
+        }
         Ok(())
     } else {
         let stderr = String::from_utf8_lossy(&result.stderr);
@@ -174,6 +190,18 @@ fn install_msi(packages_dir: &Path, pkg: &Package) -> Result<(), String> {
         .map_err(|e| format!("{}: 执行安装命令失败: {}", pkg.name, e))?;
 
     if result.status.success() {
+        // 安装成功后，如果配置了创建快捷方式，尝试查找并创建
+        #[cfg(target_os = "windows")]
+        if pkg.install.create_shortcut {
+            let shortcut_name = pkg.install.shortcut_name.as_deref().unwrap_or(&pkg.name);
+            if let Some(ref install_dir) = pkg.install.install_dir {
+                if !install_dir.is_empty() {
+                    let _ = create_exe_shortcut(shortcut_name, install_dir, &pkg.id);
+                }
+            } else {
+                // 未指定安装目录，跳过快捷方式创建
+            }
+        }
         Ok(())
     } else {
         let stderr = String::from_utf8_lossy(&result.stderr);
@@ -226,6 +254,59 @@ fn extract_zip(zip_path: &Path, target_dir: &Path) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// 为 exe/msi 安装的程序创建快捷方式
+/// 在安装目录中搜索与包 ID 匹配的可执行文件
+#[cfg(target_os = "windows")]
+fn create_exe_shortcut(shortcut_name: &str, install_dir: &str, pkg_id: &str) -> Result<(), String> {
+    let dir = Path::new(install_dir);
+    if !dir.exists() {
+        return Err(format!("安装目录不存在: {}", install_dir));
+    }
+
+    // 优先搜索与 pkg_id 直接匹配的 exe
+    let candidates = [format!("{}.exe", pkg_id)];
+    for candidate in &candidates {
+        let exe_path = dir.join(candidate);
+        if exe_path.exists() {
+            return create_shortcut(shortcut_name, dir, candidate);
+        }
+    }
+
+    // 如果没有直接匹配，搜索安装目录下所有 exe 文件
+    if dir.is_dir() {
+        if let Ok(entries) = fs::read_dir(dir) {
+            let mut exe_files: Vec<std::path::PathBuf> = entries
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    e.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("exe"))
+                })
+                .map(|e| e.path())
+                .collect();
+
+            // 优先选择名称中包含包 ID 的 exe
+            exe_files.sort_by(|a, b| {
+                let a_match = a.file_name()
+                    .map(|n| n.to_string_lossy().to_lowercase().contains(&pkg_id.to_lowercase()))
+                    .unwrap_or(false);
+                let b_match = b.file_name()
+                    .map(|n| n.to_string_lossy().to_lowercase().contains(&pkg_id.to_lowercase()))
+                    .unwrap_or(false);
+                b_match.cmp(&a_match)
+            });
+
+            if let Some(exe_path) = exe_files.first() {
+                if let Some(exe_name) = exe_path.file_name() {
+                    if let Some(name_str) = exe_name.to_str() {
+                        return create_shortcut(shortcut_name, dir, name_str);
+                    }
+                }
+            }
+        }
+    }
+
+    Err(format!("未在安装目录中找到可执行文件: {}", install_dir))
 }
 
 /// 在桌面创建快捷方式（仅 Windows）

@@ -80,6 +80,12 @@ pub struct PackageInstall {
     /// 目录参数格式（如 /D=、-d 等）
     #[serde(default)]
     pub dir_format: Option<String>,
+    /// 是否创建桌面快捷方式
+    #[serde(default)]
+    pub create_shortcut: bool,
+    /// 快捷方式名称
+    #[serde(default)]
+    pub shortcut_name: Option<String>,
 }
 
 // ===== 默认配置 =====
@@ -130,6 +136,10 @@ packages:
     install:
       type: exe
       silent_args: "/S"
+      create_shortcut: true
+      shortcut_name: "7-Zip"
+      install_dir: "C:\\Program Files\\7-Zip"
+      dir_format: "/D="
 
   - id: "winrar"
     enabled: true
@@ -146,6 +156,9 @@ packages:
     install:
       type: exe
       silent_args: "/S"
+      create_shortcut: true
+      install_dir: "C:\\Program Files\\WinRAR"
+      dir_format: "/D="
 
   - id: "huorong"
     enabled: true
@@ -229,6 +242,9 @@ packages:
     install:
       type: exe
       silent_args: "/VERYSILENT /MERGETASKS=!RUN /NORESTART"
+      create_shortcut: true
+      install_dir: "C:\\Users\\Public\\Software\\VSCode"
+      dir_format: "/MERGETASKS=!runcode|desktopicon|!quicklaunchicon|addcontextmenufiles,associatewithfiles,addcontextmenufolders /DIR="
 
   - id: "git"
     enabled: true
@@ -264,6 +280,7 @@ packages:
       silent_args: ""
       main_exe: "notepad++.exe"
       extract_subdir: "Notepad++"
+      create_shortcut: true
 
   - id: "potplayer"
     enabled: true
@@ -282,6 +299,7 @@ packages:
       silent_args: ""
       main_exe: "PotPlayerMini64.exe"
       extract_subdir: "PotPlayer"
+      create_shortcut: true
 
   - id: "everything"
     enabled: true
@@ -300,6 +318,7 @@ packages:
       silent_args: ""
       main_exe: "Everything.exe"
       extract_subdir: "Everything"
+      create_shortcut: true
 
   - id: "sumatrapdf"
     enabled: true
@@ -318,6 +337,7 @@ packages:
       silent_args: ""
       main_exe: "SumatraPDF.exe"
       extract_subdir: "SumatraPDF"
+      create_shortcut: true
 
   - id: "irfanview"
     enabled: true
@@ -336,6 +356,7 @@ packages:
       silent_args: ""
       main_exe: "i_view64.exe"
       extract_subdir: "IrfanView"
+      create_shortcut: true
 "#;
 
 // ===== 配置加载 =====
