@@ -91,7 +91,7 @@ fn install_green(packages_dir: &Path, apps_dir: &Path, pkg: &Package) -> Result<
         }
     }
 
-    Ok(()))
+    Ok(())
 }
 
 /// 静默安装 exe
