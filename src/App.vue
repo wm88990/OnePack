@@ -10,6 +10,7 @@ import AddPackageDialog from './components/AddPackageDialog.vue'
 import EditPackageDialog from './components/EditPackageDialog.vue'
 import BatchOperationDialog from './components/BatchOperationDialog.vue'
 import ImportCompareDialog from './components/ImportCompareDialog.vue'
+import ConfigEditorDialog from './components/ConfigEditorDialog.vue'
 import type { ConfigFile, InstallProgressEvent, PackageItem } from './types'
 import { useToast } from './composables/useToast'
 
@@ -25,6 +26,7 @@ const { toasts, addToast, removeToast } = useToast()
 const showAddDialog = ref(false)
 const showBatchDialog = ref(false)
 const showImportDialog = ref(false)
+const showConfigEditor = ref(false)
 const editingPkg = ref<PackageItem | null>(null)
 const installedIds = ref<Set<string>>(new Set())
 const checkingStatus = ref(false)
@@ -258,6 +260,7 @@ onUnmounted(() => {
       <div class="logo">📦 OnePack <span>v1.0.0</span></div>
       <div class="spacer"></div>
       <button class="topbar-btn" @click="showImportDialog = true">📂 导入</button>
+      <button class="topbar-btn" @click="showConfigEditor = true">📝 编辑配置</button>
       <button class="topbar-btn" @click="exportConfig">📤 导出配置</button>
       <button class="topbar-btn" @click="showBatchDialog = true" :disabled="selectedCount === 0">⚡ 批量操作</button>
       <button class="topbar-btn" @click="loadPackages">🔄 刷新</button>
@@ -361,6 +364,13 @@ onUnmounted(() => {
       :categories="config?.categories || []"
       @close="showBatchDialog = false"
       @updated="onBatchUpdated"
+    />
+
+    <!-- 编辑配置文件对话框 -->
+    <ConfigEditorDialog
+      v-if="showConfigEditor"
+      @close="showConfigEditor = false"
+      @saved="async () => { await loadPackages(); checkInstalledStatus(); }"
     />
 
     <!-- 导入/对比配置对话框 -->
