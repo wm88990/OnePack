@@ -86,19 +86,19 @@ function setSearch(keyword: string) {
 // 全选/取消全选/反选
 function selectAllVisible() {
   if (!config.value) return
-  const filtered = getFilteredPackages()
+  const filtered = filteredPackages.value
   filtered.forEach(pkg => selectedIds.value.add(pkg.id))
 }
 
 function deselectAllVisible() {
   if (!config.value) return
-  const filtered = getFilteredPackages()
+  const filtered = filteredPackages.value
   filtered.forEach(pkg => selectedIds.value.delete(pkg.id))
 }
 
 function invertSelection() {
   if (!config.value) return
-  const filtered = getFilteredPackages()
+  const filtered = filteredPackages.value
   filtered.forEach(pkg => {
     if (selectedIds.value.has(pkg.id)) {
       selectedIds.value.delete(pkg.id)
@@ -108,8 +108,8 @@ function invertSelection() {
   })
 }
 
-// 获取过滤后的包列表
-function getFilteredPackages() {
+// 计算属性：过滤后的包列表
+const filteredPackages = computed(() => {
   if (!config.value) return []
   const keyword = searchKeyword.value.trim().toLowerCase()
   return config.value.packages.filter(pkg => {
@@ -122,7 +122,7 @@ function getFilteredPackages() {
     }
     return true
   })
-}
+})
 
 // 切换单个包的选中状态
 function togglePackage(id: string, checked: boolean) {
@@ -136,7 +136,7 @@ function togglePackage(id: string, checked: boolean) {
 // 切换全选
 function toggleCheckAll(checked: boolean) {
   if (!config.value) return
-  const filtered = getFilteredPackages()
+  const filtered = filteredPackages.value
   if (checked) {
     filtered.forEach(pkg => selectedIds.value.add(pkg.id))
   } else {
@@ -238,7 +238,7 @@ onUnmounted(() => {
         <!-- 软件列表 -->
         <PackageList
           v-else-if="config"
-          :packages="config.packages"
+          :packages="filteredPackages"
           :categories="config.categories"
           :selected-ids="selectedIds"
           @toggle-package="togglePackage"
