@@ -38,22 +38,20 @@ jobs:
         run: npx tauri build
 
       - name: Package portable zip
+        shell: cmd
         run: |
           mkdir OnePack
           copy src-tauri\target\release\OnePack.exe OnePack\
           copy config.yaml OnePack\
           mkdir OnePack\packages
-          echo. > OnePack\packages\README.txt
+          mkdir OnePack\apps
           echo OnePack - 放置安装包到此目录 > OnePack\packages\README.txt
-          echo. > OnePack\packages\README.txt
+          echo. >> OnePack\packages\README.txt
           echo 支持格式: >> OnePack\packages\README.txt
           echo   .exe  - 静默安装程序 >> OnePack\packages\README.txt
           echo   .zip  - 绿色软件压缩包 >> OnePack\packages\README.txt
-          echo. > OnePack\packages\README.txt
-          mkdir OnePack\apps
-          echo. > OnePack\apps\README.txt
-          echo OnePack - 绿色软件解压目录 >> OnePack\apps\README.txt
-          echo. > OnePack\apps\README.txt
+          echo OnePack - 绿色软件解压目录 > OnePack\apps\README.txt
+          echo. >> OnePack\apps\README.txt
           echo 绿色软件将自动解压到此目录下对应子文件夹 >> OnePack\apps\README.txt
           powershell -Command "Compress-Archive -Path OnePack -DestinationPath OnePack-Portable.zip"
 
