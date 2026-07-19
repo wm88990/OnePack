@@ -20,9 +20,11 @@ export interface PackageSource {
 }
 
 export interface PackageInstall {
-  type: 'exe' | 'msi'
+  type: 'exe' | 'msi' | 'green'
   silent_args: string
   manual_args?: string
+  main_exe?: string         // 绿色软件主程序文件名
+  extract_subdir?: string   // 绿色软件解压后的子目录名
 }
 
 // ===== 分类类型 =====

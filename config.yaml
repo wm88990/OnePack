@@ -1,32 +1,36 @@
 meta:
   name: "我的装机方案"
   version: "1.0.0"
-  created: "2026-07-18"
+  created: "2026-07-19"
 
 categories:
   - id: system
     name: 系统工具
-    icon: "\u2699\uFE0F"
+    icon: "⚙️"
   - id: browser
     name: 网络浏览
-    icon: "\uD83C\uDF10"
+    icon: "🌐"
   - id: office
     name: 办公应用
-    icon: "\uD83D\uDCC4"
+    icon: "📄"
   - id: social
     name: 通讯社交
-    icon: "\uD83D\uDCAC"
+    icon: "💬"
   - id: media
     name: 影音娱乐
-    icon: "\uD83C\uDFB5"
+    icon: "🎵"
   - id: dev
     name: 开发工具
-    icon: "\uD83D\uDD27"
+    icon: "🛠️"
+  - id: green
+    name: 绿色软件
+    icon: "🍃"
 
 packages:
+  # ===== 系统工具 =====
   - id: "7zip"
     name: "7-Zip"
-    icon: "\uD83D\uDDCE\uFE0F"
+    icon: "📦"
     category: system
     description: "开源压缩解压工具，支持多种格式"
     version: "24.09"
@@ -41,7 +45,7 @@ packages:
 
   - id: "winrar"
     name: "WinRAR"
-    icon: "\uD83D\uDCDA"
+    icon: "📚"
     category: system
     description: "强大的压缩文件管理器"
     version: "6.24"
@@ -56,7 +60,7 @@ packages:
 
   - id: "huorong"
     name: "火绒安全"
-    icon: "\uD83D\uDEE1\uFE0F"
+    icon: "🛡️"
     category: system
     description: "轻量级安全防护软件"
     version: "5.0.82"
@@ -69,9 +73,10 @@ packages:
       type: exe
       silent_args: "/S"
 
+  # ===== 网络浏览 =====
   - id: "chrome"
     name: "Google Chrome"
-    icon: "\uD83C\uDF10"
+    icon: "🌐"
     category: browser
     description: "谷歌浏览器"
     version: "131.0"
@@ -84,9 +89,10 @@ packages:
       type: exe
       silent_args: "/silent /install"
 
+  # ===== 通讯社交 =====
   - id: "wechat"
     name: "微信"
-    icon: "\uD83D\uDCAC"
+    icon: "💬"
     category: social
     description: "腾讯即时通讯工具"
     version: "3.9.12"
@@ -101,7 +107,7 @@ packages:
 
   - id: "qq"
     name: "QQ"
-    icon: "\uD83D\uDC1F"
+    icon: "🐧"
     category: social
     description: "腾讯即时通讯工具"
     version: "9.9.15"
@@ -114,24 +120,10 @@ packages:
       type: exe
       silent_args: "/S"
 
-  - id: "dingtalk"
-    name: "钉钉"
-    icon: "\uD83D\uDCCC"
-    category: social
-    description: "阿里巴巴企业通讯协作平台"
-    version: "7.6"
-    size: "195 MB"
-    source:
-      type: local
-      path: "DingTalk.exe"
-      hash_sha256: ""
-    install:
-      type: exe
-      silent_args: "/S"
-
+  # ===== 开发工具 =====
   - id: "vscode"
     name: "VS Code"
-    icon: "\uD83D\uDCBB"
+    icon: "💻"
     category: dev
     description: "微软轻量代码编辑器"
     version: "1.96"
@@ -146,7 +138,7 @@ packages:
 
   - id: "git"
     name: "Git"
-    icon: "\uD83D\uDCE6"
+    icon: "📁"
     category: dev
     description: "分布式版本控制系统"
     version: "2.47"
@@ -158,3 +150,89 @@ packages:
     install:
       type: exe
       silent_args: "/VERYSILENT /NORESTART"
+
+  # ===== 绿色软件 =====
+  - id: "notepadpp"
+    name: "Notepad++"
+    icon: "📝"
+    category: green
+    description: "轻量级代码编辑器，免安装"
+    version: "8.7"
+    size: "4.8 MB"
+    source:
+      type: local
+      path: "npp.8.7.portable.zip"
+      hash_sha256: ""
+    install:
+      type: green
+      silent_args: ""
+      main_exe: "notepad++.exe"
+      extract_subdir: "Notepad++"
+
+  - id: "potplayer"
+    name: "PotPlayer"
+    icon: "🎬"
+    category: green
+    description: "高性能多媒体播放器，免安装"
+    version: "1.7.22"
+    size: "38 MB"
+    source:
+      type: local
+      path: "PotPlayerSetup.zip"
+      hash_sha256: ""
+    install:
+      type: green
+      silent_args: ""
+      main_exe: "PotPlayerMini64.exe"
+      extract_subdir: "PotPlayer"
+
+  - id: "everything"
+    name: "Everything"
+    icon: "🔍"
+    category: green
+    description: "极速文件搜索工具，免安装"
+    version: "1.4.1"
+    size: "1.8 MB"
+    source:
+      type: local
+      path: "Everything-1.4.1.zip"
+      hash_sha256: ""
+    install:
+      type: green
+      silent_args: ""
+      main_exe: "Everything.exe"
+      extract_subdir: "Everything"
+
+  - id: "sumatrapdf"
+    name: "SumatraPDF"
+    icon: "📖"
+    category: green
+    description: "轻量级 PDF 阅读器，免安装"
+    version: "3.5.2"
+    size: "6.5 MB"
+    source:
+      type: local
+      path: "SumatraPDF-3.5.2.zip"
+      hash_sha256: ""
+    install:
+      type: green
+      silent_args: ""
+      main_exe: "SumatraPDF.exe"
+      extract_subdir: "SumatraPDF"
+
+  - id: "irfanview"
+    name: "IrfanView"
+    icon: "🖼️"
+    category: green
+    description: "轻量级图片查看器，免安装"
+    version: "4.70"
+    size: "5 MB"
+    source:
+      type: local
+      path: "iview470_plugins.zip"
+      hash_sha256: ""
+    install:
+      type: green
+      silent_args: ""
+      main_exe: "i_view64.exe"
+      extract_subdir: "IrfanView"
