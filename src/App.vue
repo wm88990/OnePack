@@ -7,7 +7,10 @@ import PackageList from './components/PackageList.vue'
 import BottomBar from './components/BottomBar.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import AddPackageDialog from './components/AddPackageDialog.vue'
-import type { ConfigFile, InstallProgressEvent } from './types'
+import EditPackageDialog from './components/EditPackageDialog.vue'
+import BatchOperationDialog from './components/BatchOperationDialog.vue'
+import ImportCompareDialog from './components/ImportCompareDialog.vue'
+import type { ConfigFile, InstallProgressEvent, PackageItem } from './types'
 import { useToast } from './composables/useToast'
 
 const config = ref<ConfigFile | null>(null)
@@ -20,6 +23,9 @@ const currentCategory = ref('all')
 const searchKeyword = ref('')
 const { toasts, addToast, removeToast } = useToast()
 const showAddDialog = ref(false)
+const showBatchDialog = ref(false)
+const showImportDialog = ref(false)
+const editingPkg = ref<PackageItem | null>(null)
 const installedIds = ref<Set<string>>(new Set())
 const checkingStatus = ref(false)
 
@@ -168,6 +174,30 @@ async function checkInstalledStatus() {
   }
 }
 
+// 编辑软件
+function editPackage(pkg: PackageItem) {
+  editingPkg.value = pkg
+}
+
+function onPackageSaved() {
+  addToast('配置已更新，正在刷新...', 'success')
+  loadPackages()
+  editingPkg.value = null
+}
+
+// 批量操作后的回调
+async function onBatchUpdated() {
+  await loadPackages()
+  checkInstalledStatus()
+  selectedIds.value.clear()
+}
+
+// 导入配置后的回调
+async function onConfigImported() {
+  await loadPackages()
+  checkInstalledStatus()
+}
+
 // 添加软件包后的回调
 async function onPackagesAdded() {
   addToast('软件包已添加，正在刷新配置...', 'success')
@@ -227,7 +257,9 @@ onUnmounted(() => {
     <header class="topbar">
       <div class="logo">📦 OnePack <span>v1.0.0</span></div>
       <div class="spacer"></div>
+      <button class="topbar-btn" @click="showImportDialog = true">📂 导入</button>
       <button class="topbar-btn" @click="exportConfig">📤 导出配置</button>
+      <button class="topbar-btn" @click="showBatchDialog = true" :disabled="selectedCount === 0">⚡ 批量操作</button>
       <button class="topbar-btn" @click="loadPackages">🔄 刷新</button>
     </header>
 
@@ -289,6 +321,7 @@ onUnmounted(() => {
           @toggle-package="togglePackage"
           @toggle-check-all="toggleCheckAll"
           @toggle-enabled="toggleEnabled"
+          @edit-package="editPackage"
         />
 
         <!-- 底栏 -->
@@ -310,6 +343,31 @@ onUnmounted(() => {
       v-if="showAddDialog"
       @close="showAddDialog = false"
       @added="onPackagesAdded"
+    />
+
+    <!-- 编辑软件配置对话框 -->
+    <EditPackageDialog
+      v-if="editingPkg"
+      :pkg="editingPkg"
+      :categories="config?.categories || []"
+      @close="editingPkg = null"
+      @saved="onPackageSaved"
+    />
+
+    <!-- 批量操作对话框 -->
+    <BatchOperationDialog
+      v-if="showBatchDialog"
+      :selected-ids="Array.from(selectedIds)"
+      :categories="config?.categories || []"
+      @close="showBatchDialog = false"
+      @updated="onBatchUpdated"
+    />
+
+    <!-- 导入/对比配置对话框 -->
+    <ImportCompareDialog
+      v-if="showImportDialog"
+      @close="showImportDialog = false"
+      @imported="onConfigImported"
     />
 
     <!-- Toast 通知 -->
@@ -357,6 +415,7 @@ onUnmounted(() => {
   transition: background 0.15s;
 }
 .topbar-btn:hover { background: rgba(255,255,255,0.22); }
+.topbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* 主体 */
 .main-body {

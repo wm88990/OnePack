@@ -120,7 +120,6 @@ fn stop_install_cmd() -> Result<String, String> {
     Ok("已发送停止信号".to_string())
 }
 
-#[tauri::command]
 /// 扫描 packages/ 目录中的文件，自动识别并生成配置条目
 #[tauri::command]
 fn scan_packages(_app_handle: tauri::AppHandle) -> Result<Vec<serde_json::Value>, String> {
@@ -392,7 +391,6 @@ fn read_exe_version_info(path: &std::path::Path) -> (String, String) {
 fn read_exe_version_info(_path: &std::path::Path) -> (String, String) {
     (String::new(), String::new())
 }
-}
 
 /// 检查指定软件是否已安装
 #[tauri::command]
@@ -509,6 +507,292 @@ fn check_registry_for_app(name: &str, id: &str) -> bool {
     false
 }
 
+/// 更新单个软件包的配置（保存到 config.yaml）
+#[tauri::command]
+fn update_package(_app_handle: tauri::AppHandle, package_data: serde_json::Value) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取配置失败: {}", e))?;
+    let mut config: Config = serde_yaml::from_str(&content)
+        .map_err(|e| format!("解析配置失败: {}", e))?;
+
+    let pkg: config::Package = serde_json::from_value(package_data.clone())
+        .map_err(|e| format!("解析包数据失败: {}", e))?;
+
+    if let Some(existing) = config.packages.iter_mut().find(|p| p.id == pkg.id) {
+        *existing = pkg;
+    } else {
+        return Err(format!("未找到软件包: {}", package_data["id"]));
+    }
+
+    let yaml = serde_yaml::to_string(&config)
+        .map_err(|e| format!("序列化配置失败: {}", e))?;
+    std::fs::write(&config_path, yaml)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok(format!("已更新: {}", config_path.display()))
+}
+
+/// 删除软件包
+#[tauri::command]
+fn delete_packages(_app_handle: tauri::AppHandle, package_ids: Vec<String>) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取配置失败: {}", e))?;
+    let mut config: Config = serde_yaml::from_str(&content)
+        .map_err(|e| format!("解析配置失败: {}", e))?;
+
+    let ids_set: std::collections::HashSet<String> = package_ids.into_iter().collect();
+    let before = config.packages.len();
+    config.packages.retain(|p| !ids_set.contains(&p.id));
+    let removed = before - config.packages.len();
+
+    let yaml = serde_yaml::to_string(&config)
+        .map_err(|e| format!("序列化配置失败: {}", e))?;
+    std::fs::write(&config_path, yaml)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok(format!("已删除 {} 个软件包", removed))
+}
+
+/// 批量更新软件包的安装目录
+#[tauri::command]
+fn batch_update_install_dir(_app_handle: tauri::AppHandle, package_ids: Vec<String>, install_dir: String, dir_format: String) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取配置失败: {}", e))?;
+    let mut config: Config = serde_yaml::from_str(&content)
+        .map_err(|e| format!("解析配置失败: {}", e))?;
+
+    let ids_set: std::collections::HashSet<String> = package_ids.into_iter().collect();
+    let mut updated = 0;
+    for pkg in &mut config.packages {
+        if ids_set.contains(&pkg.id) {
+            pkg.install.install_dir = Some(install_dir.clone());
+            pkg.install.dir_format = Some(dir_format.clone());
+            updated += 1;
+        }
+    }
+
+    let yaml = serde_yaml::to_string(&config)
+        .map_err(|e| format!("序列化配置失败: {}", e))?;
+    std::fs::write(&config_path, yaml)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok(format!("已更新 {} 个软件包的安装目录", updated))
+}
+
+/// 批量更新软件包的分类
+#[tauri::command]
+fn batch_update_category(_app_handle: tauri::AppHandle, package_ids: Vec<String>, category: String) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+
+    let content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取配置失败: {}", e))?;
+    let mut config: Config = serde_yaml::from_str(&content)
+        .map_err(|e| format!("解析配置失败: {}", e))?;
+
+    let ids_set: std::collections::HashSet<String> = package_ids.into_iter().collect();
+    let mut updated = 0;
+    for pkg in &mut config.packages {
+        if ids_set.contains(&pkg.id) {
+            pkg.category = category.clone();
+            updated += 1;
+        }
+    }
+
+    let yaml = serde_yaml::to_string(&config)
+        .map_err(|e| format!("序列化配置失败: {}", e))?;
+    std::fs::write(&config_path, yaml)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok(format!("已更新 {} 个软件包的分类", updated))
+}
+
+/// 导入配置文件（合并到当前配置）
+#[tauri::command]
+fn import_config(_app_handle: tauri::AppHandle, import_path: String) -> Result<Config, String> {
+    let app_dir = config::get_app_dir();
+    let import = std::path::Path::new(&import_path);
+
+    if !import.exists() {
+        return Err(format!("导入文件不存在: {}", import_path));
+    }
+
+    let import_content = std::fs::read_to_string(import)
+        .map_err(|e| format!("读取导入文件失败: {}", e))?;
+    let import_config: Config = serde_yaml::from_str(&import_content)
+        .map_err(|e| format!("解析导入文件失败: {}", e))?;
+
+    // 合并：新配置覆盖当前配置（保留当前配置的结构，用导入数据更新匹配项）
+    let config_path = app_dir.join("config.yaml");
+    let current_content = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取当前配置失败: {}", e))?;
+    let mut current: Config = serde_yaml::from_str(&current_content)
+        .map_err(|e| format!("解析当前配置失败: {}", e))?;
+
+    // 更新 meta
+    current.meta.name = import_config.meta.name;
+    current.meta.version = import_config.meta.version;
+
+    // 合并分类（添加新的分类）
+    let existing_cat_ids: std::collections::HashSet<String> = current.categories.iter().map(|c| c.id.clone()).collect();
+    for cat in import_config.categories {
+        if !existing_cat_ids.contains(&cat.id) {
+            current.categories.push(cat);
+        }
+    }
+
+    // 合并软件包（按 id 更新或添加）
+    let existing_pkg_ids: std::collections::HashSet<String> = current.packages.iter().map(|p| p.id.clone()).collect();
+    for pkg in import_config.packages {
+        if let Some(existing) = current.packages.iter_mut().find(|p| p.id == pkg.id) {
+            *existing = pkg;
+        } else {
+            current.packages.push(pkg);
+        }
+    }
+
+    // 保存合并后的配置
+    let yaml = serde_yaml::to_string(&current)
+        .map_err(|e| format!("序列化配置失败: {}", e))?;
+    std::fs::write(&config_path, yaml)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok(current)
+}
+
+/// 对比两个配置，返回差异信息
+#[tauri::command]
+fn compare_configs(_app_handle: tauri::AppHandle, compare_path: String) -> Result<serde_json::Value, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+    let compare = std::path::Path::new(&compare_path);
+
+    if !compare.exists() {
+        return Err(format!("对比文件不存在: {}", compare_path));
+    }
+
+    let current: Config = {
+        let content = std::fs::read_to_string(&config_path)
+            .map_err(|e| format!("读取当前配置失败: {}", e))?;
+        serde_yaml::from_str(&content)
+            .map_err(|e| format!("解析当前配置失败: {}", e))?
+    };
+
+    let other: Config = {
+        let content = std::fs::read_to_string(compare)
+            .map_err(|e| format!("读取对比配置失败: {}", e))?;
+        serde_yaml::from_str(&content)
+            .map_err(|e| format!("解析对比配置失败: {}", e))?
+    };
+
+    // 构建对比结果
+    let current_ids: std::collections::HashSet<&str> = current.packages.iter().map(|p| p.id.as_str()).collect();
+    let other_ids: std::collections::HashSet<&str> = other.packages.iter().map(|p| p.id.as_str()).collect();
+
+    // 仅在当前配置中存在的包
+    let only_current: Vec<serde_json::Value> = current.packages.iter()
+        .filter(|p| !other_ids.contains(p.id.as_str()))
+        .map(|p| serde_json::to_value(p).unwrap_or_default())
+        .collect();
+
+    // 仅在对比配置中存在的包
+    let only_other: Vec<serde_json::Value> = other.packages.iter()
+        .filter(|p| !current_ids.contains(p.id.as_str()))
+        .map(|p| serde_json::to_value(p).unwrap_or_default())
+        .collect();
+
+    // 两个配置都存在但有差异的包
+    let mut different: Vec<serde_json::Value> = Vec::new();
+    for pkg in &current.packages {
+        if let Some(other_pkg) = other.packages.iter().find(|p| p.id == pkg.id) {
+            let cur_json = serde_json::to_value(pkg).unwrap_or_default();
+            let oth_json = serde_json::to_value(other_pkg).unwrap_or_default();
+            if cur_json != oth_json {
+                different.push(serde_json::json!({
+                    "id": pkg.id,
+                    "name": pkg.name,
+                    "current": cur_json,
+                    "other": oth_json,
+                    "changes": compare_package_diff(pkg, other_pkg)
+                }));
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "current_name": current.meta.name,
+        "other_name": other.meta.name,
+        "current_count": current.packages.len(),
+        "other_count": other.packages.len(),
+        "only_in_current": only_current,
+        "only_in_other": only_other,
+        "different": different,
+    }))
+}
+
+/// 对比两个包的差异字段
+fn compare_package_diff(a: &config::Package, b: &config::Package) -> Vec<serde_json::Value> {
+    let mut changes = Vec::new();
+
+    macro_rules! check_field {
+        ($name:expr, $a:expr, $b:expr) => {
+            if $a != $b {
+                changes.push(serde_json::json!({
+                    "field": $name,
+                    "current": $a,
+                    "other": $b,
+                }));
+            }
+        };
+    }
+
+    check_field!("name", a.name, b.name);
+    check_field!("version", a.version, b.version);
+    check_field!("category", a.category, b.category);
+    check_field!("description", a.description, b.description);
+    check_field!("enabled", a.enabled, b.enabled);
+    check_field!("install_type", a.install.install_type, b.install.install_type);
+    check_field!("silent_args", a.install.silent_args, b.install.silent_args);
+    check_field!("install_dir", a.install.install_dir, b.install.install_dir);
+    check_field!("create_shortcut", a.install.create_shortcut, b.install.create_shortcut);
+
+    changes
+}
+
+/// 读取当前配置文件的原始 YAML 内容
+#[tauri::command]
+fn get_config_yaml(_app_handle: tauri::AppHandle) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+    std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("读取配置文件失败: {}", e))
+}
+
+/// 保存原始 YAML 内容到配置文件
+#[tauri::command]
+fn save_config_yaml(_app_handle: tauri::AppHandle, yaml_content: String) -> Result<String, String> {
+    let app_dir = config::get_app_dir();
+    let config_path = app_dir.join("config.yaml");
+
+    // 先验证 YAML 是否合法
+    let _: Config = serde_yaml::from_str(&yaml_content)
+        .map_err(|e| format!("YAML 格式错误: {}", e))?;
+
+    std::fs::write(&config_path, yaml_content)
+        .map_err(|e| format!("写入配置失败: {}", e))?;
+
+    Ok("配置已保存".to_string())
+}
+
 /// 将扫描到的软件包追加到 config.yaml
 #[tauri::command]
 fn add_packages(_app_handle: tauri::AppHandle, packages: Vec<serde_json::Value>) -> Result<String, String> {
@@ -576,6 +860,14 @@ fn main() {
             scan_packages,
             add_packages,
             check_installed,
+            update_package,
+            delete_packages,
+            batch_update_install_dir,
+            batch_update_category,
+            import_config,
+            compare_configs,
+            get_config_yaml,
+            save_config_yaml,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

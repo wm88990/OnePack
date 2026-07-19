@@ -14,6 +14,7 @@ const emit = defineEmits<{
   'toggle-package': [id: string, checked: boolean]
   'toggle-check-all': [checked: boolean]
   'toggle-enabled': [id: string, enabled: boolean]
+  'edit-package': [pkg: PackageItem]
 }>()
 
 // 视图模式: list | compact | grid
@@ -44,6 +45,10 @@ function toggleCheckAll(e: Event) {
 // 是否已安装
 function isInstalled(id: string) {
   return props.installedIds?.has(id) || false
+}
+
+function editPkg(pkg: PackageItem) {
+  emit('edit-package', pkg)
 }
 
 // 获取分类图标
@@ -109,6 +114,7 @@ function getCategoryIcon(catId: string) {
           <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
           <span class="switch-slider"></span>
         </label>
+        <button class="edit-btn" @click.stop="editPkg(pkg)" title="编辑配置">✏️</button>
       </div>
     </div>
 
@@ -132,6 +138,7 @@ function getCategoryIcon(catId: string) {
           <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
           <span class="switch-slider"></span>
         </label>
+        <button class="edit-btn-sm" @click.stop="editPkg(pkg)" title="编辑配置">✏️</button>
       </div>
     </div>
 
@@ -154,6 +161,7 @@ function getCategoryIcon(catId: string) {
           <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
           <span class="switch-slider"></span>
         </label>
+        <button class="card-edit-btn" @click.stop="editPkg(pkg)" title="编辑配置">✏️</button>
       </div>
     </div>
   </div>
@@ -262,6 +270,59 @@ function getCategoryIcon(catId: string) {
   border-radius: 3px;
   font-size: 11px;
 }
+.edit-btn {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pkg-row:hover .edit-btn { opacity: 1; }
+.edit-btn:hover { background: #e3ecf7; border-color: #2b5ea7; }
+.edit-btn-sm {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pkg-row-compact:hover .edit-btn-sm { opacity: 1; }
+.edit-btn-sm:hover { background: #e3ecf7; }
+.card-edit-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pkg-card:hover .card-edit-btn { opacity: 1; }
+.card-edit-btn:hover { background: rgba(43,94,167,0.1); }
 
 /* ===== 紧凑列表视图 ===== */
 .view-compact {}
@@ -319,6 +380,7 @@ function getCategoryIcon(catId: string) {
   text-align: center;
   cursor: pointer;
   transition: all 0.15s;
+  position: relative;
 }
 .pkg-card:hover {
   border-color: #2b5ea7;
