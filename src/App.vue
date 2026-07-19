@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar.vue'
 import PackageList from './components/PackageList.vue'
 import BottomBar from './components/BottomBar.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import AddPackageDialog from './components/AddPackageDialog.vue'
 import type { ConfigFile, InstallProgressEvent } from './types'
 import { useToast } from './composables/useToast'
 
@@ -18,6 +19,7 @@ const isInstalling = ref(false)
 const currentCategory = ref('all')
 const searchKeyword = ref('')
 const { toasts, addToast, removeToast } = useToast()
+const showAddDialog = ref(false)
 
 let unlisten: UnlistenFn | null = null
 
@@ -144,6 +146,12 @@ function toggleCheckAll(checked: boolean) {
   }
 }
 
+// 添加软件包后的回调
+async function onPackagesAdded() {
+  addToast('软件包已添加，正在刷新配置...', 'success')
+  await loadPackages()
+}
+
 // 切换软件启用/禁用
 function toggleEnabled(id: string, enabled: boolean) {
   if (!config.value) return
@@ -222,6 +230,7 @@ onUnmounted(() => {
               @input="setSearch(($event.target as HTMLInputElement).value)"
             />
           </div>
+          <button class="tb-btn tb-btn-primary" @click="showAddDialog = true">📥 添加软件</button>
           <button class="tb-btn" @click="selectAllVisible">全选当前</button>
           <button class="tb-btn" @click="deselectAllVisible">取消当前</button>
           <button class="tb-btn" @click="invertSelection">反选</button>
@@ -268,6 +277,13 @@ onUnmounted(() => {
         />
       </div>
     </div>
+
+    <!-- 添加软件对话框 -->
+    <AddPackageDialog
+      v-if="showAddDialog"
+      @close="showAddDialog = false"
+      @added="onPackagesAdded"
+    />
 
     <!-- Toast 通知 -->
     <ToastContainer :toasts="toasts" @remove="removeToast" />
@@ -372,6 +388,12 @@ onUnmounted(() => {
   font-family: inherit;
 }
 .tb-btn:hover { background: #e8e8e8; }
+.tb-btn-primary {
+  background: #2b5ea7;
+  color: #fff;
+  border-color: #2b5ea7;
+}
+.tb-btn-primary:hover { background: #1e4c8a; }
 .tb-info {
   margin-left: auto;
   font-size: 12px;
