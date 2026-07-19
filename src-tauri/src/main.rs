@@ -24,9 +24,9 @@ async fn start_install(app_handle: tauri::AppHandle, package_ids: Vec<String>) -
     let app_dir = config::get_app_dir();
     let config = config::load_config(&app_dir)?;
 
-    // 过滤出选中的包，保持配置文件中的顺序
+    // 过滤出选中的且已启用的包，保持配置文件中的顺序
     let selected: Vec<_> = config.packages.iter()
-        .filter(|p| package_ids.contains(&p.id))
+        .filter(|p| package_ids.contains(&p.id) && p.enabled)
         .collect();
 
     let total = selected.len() as u32;

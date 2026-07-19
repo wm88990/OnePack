@@ -5,30 +5,38 @@ meta:
 
 categories:
   - id: system
+    enabled: true
     name: 系统工具
     icon: "⚙️"
   - id: browser
+    enabled: true
     name: 网络浏览
     icon: "🌐"
   - id: office
+    enabled: true
     name: 办公应用
     icon: "📄"
   - id: social
+    enabled: true
     name: 通讯社交
     icon: "💬"
   - id: media
+    enabled: true
     name: 影音娱乐
     icon: "🎵"
   - id: dev
+    enabled: true
     name: 开发工具
     icon: "🛠️"
   - id: green
+    enabled: true
     name: 绿色软件
     icon: "🍃"
 
 packages:
   # ===== 系统工具 =====
   - id: "7zip"
+    enabled: true
     name: "7-Zip"
     icon: "📦"
     category: system
@@ -44,6 +52,7 @@ packages:
       silent_args: "/S"
 
   - id: "winrar"
+    enabled: true
     name: "WinRAR"
     icon: "📚"
     category: system
@@ -59,6 +68,7 @@ packages:
       silent_args: "/S"
 
   - id: "huorong"
+    enabled: true
     name: "火绒安全"
     icon: "🛡️"
     category: system
@@ -75,6 +85,7 @@ packages:
 
   # ===== 网络浏览 =====
   - id: "chrome"
+    enabled: true
     name: "Google Chrome"
     icon: "🌐"
     category: browser
@@ -91,6 +102,7 @@ packages:
 
   # ===== 通讯社交 =====
   - id: "wechat"
+    enabled: true
     name: "微信"
     icon: "💬"
     category: social
@@ -106,6 +118,7 @@ packages:
       silent_args: "/S /AutoInstall"
 
   - id: "qq"
+    enabled: true
     name: "QQ"
     icon: "🐧"
     category: social
@@ -122,6 +135,7 @@ packages:
 
   # ===== 开发工具 =====
   - id: "vscode"
+    enabled: true
     name: "VS Code"
     icon: "💻"
     category: dev
@@ -137,6 +151,7 @@ packages:
       silent_args: "/VERYSILENT /MERGETASKS=!RUN /NORESTART"
 
   - id: "git"
+    enabled: true
     name: "Git"
     icon: "📁"
     category: dev
@@ -153,6 +168,7 @@ packages:
 
   # ===== 绿色软件 =====
   - id: "notepadpp"
+    enabled: true
     name: "Notepad++"
     icon: "📝"
     category: green
@@ -170,6 +186,7 @@ packages:
       extract_subdir: "Notepad++"
 
   - id: "potplayer"
+    enabled: true
     name: "PotPlayer"
     icon: "🎬"
     category: green
@@ -187,6 +204,7 @@ packages:
       extract_subdir: "PotPlayer"
 
   - id: "everything"
+    enabled: true
     name: "Everything"
     icon: "🔍"
     category: green
@@ -204,6 +222,7 @@ packages:
       extract_subdir: "Everything"
 
   - id: "sumatrapdf"
+    enabled: true
     name: "SumatraPDF"
     icon: "📖"
     category: green
@@ -221,6 +240,7 @@ packages:
       extract_subdir: "SumatraPDF"
 
   - id: "irfanview"
+    enabled: true
     name: "IrfanView"
     icon: "🖼️"
     category: green

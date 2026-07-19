@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'toggle-package': [id: string, checked: boolean]
   'toggle-check-all': [checked: boolean]
+  'toggle-enabled': [id: string, enabled: boolean]
 }>()
 
 // 视图模式: list | compact | grid
@@ -83,7 +84,7 @@ function getCategoryIcon(catId: string) {
       <div
         v-for="(pkg, idx) in packages"
         :key="pkg.id"
-        :class="['pkg-row', { even: idx % 2 === 1 }]"
+        :class="['pkg-row', { even: idx % 2 === 1, disabled: !pkg.enabled }]"
         @click="togglePkg(pkg.id)"
       >
         <input type="checkbox" :checked="isChecked(pkg.id)" @click.stop />
@@ -96,6 +97,10 @@ function getCategoryIcon(catId: string) {
           <span class="pkg-ver">{{ pkg.version }}</span>
           <span class="pkg-size">{{ pkg.size }}</span>
         </div>
+        <label class="enable-switch" @click.stop>
+          <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
+          <span class="switch-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -104,7 +109,7 @@ function getCategoryIcon(catId: string) {
       <div
         v-for="pkg in packages"
         :key="pkg.id"
-        class="pkg-row-compact"
+        :class="['pkg-row-compact', { disabled: !pkg.enabled }]"
         @click="togglePkg(pkg.id)"
       >
         <input type="checkbox" :checked="isChecked(pkg.id)" @click.stop />
@@ -114,6 +119,10 @@ function getCategoryIcon(catId: string) {
           <span class="pkg-ver-tag">{{ pkg.version }}</span>
           <span class="pkg-size-tag">{{ pkg.size }}</span>
         </div>
+        <label class="enable-switch enable-switch-sm" @click.stop>
+          <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
+          <span class="switch-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -122,7 +131,7 @@ function getCategoryIcon(catId: string) {
       <div
         v-for="pkg in packages"
         :key="pkg.id"
-        :class="['pkg-card', { checked: isChecked(pkg.id) }]"
+        :class="['pkg-card', { checked: isChecked(pkg.id), disabled: !pkg.enabled }]"
         @click="togglePkg(pkg.id)"
       >
         <div class="card-icon">{{ pkg.icon }}</div>
@@ -131,6 +140,10 @@ function getCategoryIcon(catId: string) {
         <div class="card-check">
           <input type="checkbox" :checked="isChecked(pkg.id)" @click.stop />
         </div>
+        <label class="enable-switch enable-switch-sm" @click.stop>
+          <input type="checkbox" :checked="pkg.enabled" @change="emit('toggle-enabled', pkg.id, ($event.target as HTMLInputElement).checked)" />
+          <span class="switch-slider"></span>
+        </label>
       </div>
     </div>
   </div>
@@ -308,4 +321,70 @@ function getCategoryIcon(catId: string) {
 .card-ver { font-size: 10px; color: #999; }
 .card-check { margin-top: 6px; }
 .card-check input[type="checkbox"] { accent-color: #2b5ea7; }
+
+/* ===== 禁用状态 ===== */
+.pkg-row.disabled,
+.pkg-row-compact.disabled,
+.pkg-card.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.pkg-row.disabled .enable-switch,
+.pkg-row-compact.disabled .enable-switch,
+.pkg-card.disabled .enable-switch {
+  pointer-events: auto;
+}
+.pkg-card.disabled {
+  filter: grayscale(0.3);
+}
+
+/* ===== 启用/禁用开关 ===== */
+.enable-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.enable-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+.switch-slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  bottom: 2px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.enable-switch input:checked + .switch-slider {
+  background: #2b5ea7;
+}
+.enable-switch input:checked + .switch-slider::before {
+  transform: translateX(16px);
+}
+.enable-switch-sm {
+  width: 30px;
+  height: 16px;
+}
+.enable-switch-sm .switch-slider::before {
+  width: 12px;
+  height: 12px;
+}
+.enable-switch-sm input:checked + .switch-slider::before {
+  transform: translateX(14px);
+}
 </style>

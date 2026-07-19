@@ -144,6 +144,15 @@ function toggleCheckAll(checked: boolean) {
   }
 }
 
+// 切换软件启用/禁用
+function toggleEnabled(id: string, enabled: boolean) {
+  if (!config.value) return
+  const pkg = config.value.packages.find(p => p.id === id)
+  if (pkg) {
+    pkg.enabled = enabled
+  }
+}
+
 onMounted(async () => {
   await loadPackages()
 
@@ -243,6 +252,7 @@ onUnmounted(() => {
           :selected-ids="selectedIds"
           @toggle-package="togglePackage"
           @toggle-check-all="toggleCheckAll"
+          @toggle-enabled="toggleEnabled"
         />
 
         <!-- 底栏 -->

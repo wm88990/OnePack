@@ -8,6 +8,7 @@ export interface PackageItem {
   description: string
   version: string
   size: string
+  enabled: boolean              // 是否启用，禁用时跳过安装
   source: PackageSource
   install: PackageInstall
 }
